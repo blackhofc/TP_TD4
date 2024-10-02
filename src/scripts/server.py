@@ -1,5 +1,4 @@
 from scapy.all import *
-import canalruidoso as f
 
 # Mostramos todas las interfaces
 print(conf.ifaces)

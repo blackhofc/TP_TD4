@@ -1,5 +1,4 @@
-import canalruidoso as f # Correr pip install canalruidoso en la terminal
-from scapy.all import * # Correr pip install scapy en la terminal
+from scapy.all import *
 
 # Elegimos parametros
 source_ip = '127.0.0.1'
