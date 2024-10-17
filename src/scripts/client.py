@@ -33,7 +33,7 @@ class Client:
 
     def wait_for_syn_ack(self):
         while True:
-            pkt = sniff(iface=self.interface, filter=f'tcp and src {self.dst_ip} and port {self.dst_port}', count=1, timeout=10)
+            pkt = sniff(iface=self.interface, filter=f'tcp and src {self.dst_ip} and port {self.dst_port}', count=1, timeout=4)
             
             if pkt and TCP in pkt[0] and pkt[0][TCP].flags == 'SA':  # Check for SYN+ACK
                 ip_response = pkt[0][IP]
@@ -52,7 +52,7 @@ class Client:
 
     def wait_for_fin(self):
         while True:
-            pkt = sniff(iface=self.interface, filter=f'tcp and src {self.dst_ip} and port {self.dst_port}', count=1, timeout=20)
+            pkt = sniff(iface=self.interface, filter=f'tcp and src {self.dst_ip} and port {self.dst_port}', count=1, timeout=24)
             
             if pkt and TCP in pkt[0] and pkt[0][TCP].flags == 'F':  # Check for FIN
                 ip_response = pkt[0][IP]
@@ -75,7 +75,7 @@ class Client:
 
     def wait_for_ack(self):
         while True:
-            pkt = sniff(iface=self.interface, filter=f'tcp and src {self.dst_ip} and port {self.dst_port}', count=1, timeout=3)
+            pkt = sniff(iface=self.interface, filter=f'tcp and src {self.dst_ip} and port {self.dst_port}', count=1, timeout=4)
             if pkt and TCP in pkt[0] and pkt[0][TCP].flags == 'A':  # Check for ACK
                 print('ACK received! Connection closed.')
                 break

@@ -13,7 +13,6 @@ class Server:
         self.seq_num = 100  # Initial sequence number for the server
         self.ack_num = 0    # Acknowledgment number
 
-
     def wait_for_syn(self):
         print(f'Listening for SYN on port {self.listen_port}...')
         
@@ -35,10 +34,9 @@ class Server:
                 self.wait_for_ack()
                 break
 
-
     def wait_for_ack(self):
         while True:
-            pkt = sniff(iface=self.interface, filter=f'tcp and src {self.dst_ip}', count=1, timeout=30)
+            pkt = sniff(iface=self.interface, filter=f'tcp and src {self.dst_ip}', count=1, timeout=4)
             if pkt and TCP in pkt[0] and pkt[0][TCP].flags == 'A':  # Check for ACK
                 self.ack_num = pkt[0][TCP].seq + 1
                 print('ACK received! Handshake complete.')
@@ -48,7 +46,6 @@ class Server:
                 syn_ack = TCP(sport=self.listen_port, dport=self.dst_port, flags='SA', seq=self.seq_num, ack=self.ack_num)
                 f.envio_paquetes_inseguro(IP(dst=self.dst_ip, src=self.src_ip)/syn_ack)
                 print(f'SYN+ACK sent! to {self.dst_ip}:{self.dst_port}')
-
 
     def close_connection(self):
         print('Closing connection...')
@@ -73,7 +70,7 @@ class Server:
 
     def wait_for_fin_ack(self):
         while True:
-            pkt = sniff(iface=self.interface, filter=f'tcp and src {self.dst_ip} and port {self.dst_port}', count=1, timeout=3)
+            pkt = sniff(iface=self.interface, filter=f'tcp and src {self.dst_ip} and port {self.dst_port}', count=1, timeout=4)
             if pkt and TCP in pkt[0] and pkt[0][TCP].flags == 'FA':  # Check for FIN+ACK
                 print('FIN+ACK received! Sending ACK.')
                 break
