@@ -1,25 +1,30 @@
 from scapy.all import *
 from utils.utils import insecure_packet_sending
 
-# Set parameters
-source_ip = '127.0.0.1'
-dest_ip = '127.0.0.1'
-dest_port = 8000
-src_port = 5000
+def send(src_ip = '127.0.0.1', dst_ip = '127.0.0.1', src_port = 5000, dst_port = 8000):
 
-def run():
+    # Make IP
+    ip = IP(dst = dst_ip, src = src_ip)
 
-    # Creamos la parte de IP
-    ip = IP(dst=dest_ip,src =source_ip)
+    # Make TCP
+    tcp = TCP(dport = dst_port, sport = src_port)
 
-    # Creamos la parte de TCP
-    tcp = TCP(dport=dest_port, sport =src_port)
-
-
-    # Los combinamos
+    # Create packet
     packet = ip/tcp
-
 
     # Send packet
     insecure_packet_sending(packet)
-    print('sent')
+
+    print('1 Packet sent!')
+    
+
+def start():
+    print('client.py')
+    
+    # Send syn
+    # Wait for Syn + ACK
+    # Send Ack
+    
+    # Wait max 20 secs to recive FIN
+    # Send FIN+ACK
+    # Wait ACK
