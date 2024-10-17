@@ -1,38 +1,26 @@
-from scapy.all import *
-from threading import Thread
 import random, time
+from scapy.all import send
 
-def insecure_packet_sending(pkt):
-    # Define probabilities for packet handling
-    packet_handling_probs = {
-        'Normal': 65,
-        'Delay': 14,
-        'Corrupt': 12,
-        'Loss': 9
-    }
-    
-    # Define constants
-    delay_time = 4
-    base_time_value = 1
-    
-    # Randomly select a packet handling outcome based on probabilities
-    outcome = random.choices(
-        list(packet_handling_probs.keys()), 
-        list(packet_handling_probs.values())
-    )[0]
-    
-    # Handle packet outcomes
-    if outcome == 'Loss':  # Packet is lost
-        return
-    
-    if outcome == 'Corrupt':  # Packet gets corrupted
-        pkt[TCP].chksum = 0x1234
-        
-    if outcome == 'Delay':  # Packet is delayed
-        base_time_value += delay_time
-    
-    # Apply the delay before sending the packet
-    time.sleep(base_time_value)
-    
-    # Send the packet
-    send(pkt, count=1)
+error_stats = {
+    'normal': 0,
+    'delay': 0,
+    'corrupt': 0,
+    'loss': 0,
+    'total': 0,
+    'total_delay': 0
+}
+
+
+def print_error_stats():
+    global error_stats
+    total_packets = error_stats['total']
+    loss_rate = (error_stats['loss'] / total_packets) * 100 if total_packets > 0 else 0
+    corrupt_rate = (error_stats['corrupt'] / total_packets) * 100 if total_packets > 0 else 0
+    delay_rate = (error_stats['delay'] / total_packets) * 100 if total_packets > 0 else 0
+    avg_delay = error_stats['total_delay'] / error_stats['delay'] if error_stats['delay'] > 0 else 0
+
+    print(f"Total packets sent: {total_packets}")
+    print(f"Packet loss rate: {loss_rate:.2f}%")
+    print(f"Packet corruption rate: {corrupt_rate:.2f}%")
+    print(f"Delay rate: {delay_rate:.2f}%")
+    print(f"Average delay (seconds): {avg_delay:.2f}")
