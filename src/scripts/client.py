@@ -29,7 +29,7 @@ class Client:
     def send_syn(self):
         syn = TCP(sport=self.src_port, dport=self.dst_port, flags='S', seq=self.seq_num)
         f.envio_paquetes_inseguro(IP(dst=self.dst_ip, src=self.src_ip)/syn)
-        print("SYN sent!")
+        print('SYN sent!')
 
     def wait_for_syn_ack(self):
         while True:
@@ -42,13 +42,13 @@ class Client:
                 self.ack_num = tcp_response.seq + 1
                 break
             else:
-                print("SYN+ACK not received, retransmitting SYN...")
+                print('SYN+ACK not received, retransmitting SYN...')
                 self.send_syn()
 
     def send_ack(self):
         ack = TCP(sport=self.src_port, dport=self.dst_port, flags='A', seq=self.seq_num + 1, ack=self.ack_num)
         f.envio_paquetes_inseguro(IP(dst=self.dst_ip, src=self.src_ip)/ack)
-        print("ACK sent! Handshake complete.")
+        print('ACK sent! Handshake complete.')
 
     def wait_for_fin(self):
         while True:
@@ -61,7 +61,7 @@ class Client:
                 self.ack_num = tcp_response.seq + 1
                 break
             else:
-                print("FIN not received, retransmitting ACK...")
+                print('FIN not received, retransmitting ACK...')
                 self.send_ack()
 
         self.send_fin_ack()
@@ -69,7 +69,7 @@ class Client:
     def send_fin_ack(self):
         fin_ack = TCP(sport=self.src_port, dport=self.dst_port, flags='FA', seq=self.seq_num + 2, ack=self.ack_num)
         f.envio_paquetes_inseguro(IP(dst=self.dst_ip, src=self.src_ip)/fin_ack)
-        print("FIN+ACK sent! Waiting for ACK...")
+        print('FIN+ACK sent! Waiting for ACK...')
 
         self.wait_for_ack()
 
@@ -77,16 +77,16 @@ class Client:
         while True:
             pkt = sniff(iface=self.interface, filter=f'tcp and src {self.dst_ip} and port {self.dst_port}', count=1, timeout=3)
             if pkt and TCP in pkt[0] and pkt[0][TCP].flags == 'A':  # Check for ACK
-                print("ACK received! Connection closed.")
+                print('ACK received! Connection closed.')
                 break
             else:
-                print("ACK not received, retransmitting FIN+ACK...")
+                print('ACK not received, retransmitting FIN+ACK...')
                 self.send_fin_ack()
 
     def start(self):
         print('Starting client...')
         self.handshake()
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     client = Client()
     client.start()

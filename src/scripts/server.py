@@ -64,7 +64,7 @@ class Server:
         # Send ACK to complete closure
         ack = TCP(sport=self.listen_port, dport=self.dst_port, flags='A', seq=self.seq_num + 2)
         f.envio_paquetes_inseguro(IP(dst=self.dst_ip, src=self.src_ip)/ack)
-        print("ACK sent! Waiting 120 secs in wait_close before closing")
+        print('ACK sent! Waiting 120 secs in wait_close before closing')
 
         # Wait for potential retransmissions of SYN+ACK
         self.wait_for_retransmission()
@@ -86,7 +86,7 @@ class Server:
         while True:
             pkt = sniff(iface=self.interface, filter=f'tcp and src {self.dst_ip} and port {self.dst_port}', count=1, timeout=120)
             if pkt and TCP in pkt[0] and pkt[0][TCP].flags == 'SA':  # Check for retransmitted SYN+ACK
-                print("SYN+ACK received, retransmitting ACK...")
+                print('SYN+ACK received, retransmitting ACK...')
                 ack = TCP(sport=self.listen_port, dport=self.dst_port, flags='A', seq=self.seq_num + 2)
                 f.envio_paquetes_inseguro(IP(dst=self.dst_ip, src=self.src_ip)/ack)
                 continue
