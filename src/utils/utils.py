@@ -33,13 +33,15 @@ def print_stats():
 
 def envio_paquetes_inseguro(pkt):
     porcentaje_delay = 14
-    porcentaje_corrupcion = 12
-    porcentaje_perdida = 9
-    porcentaje_normal = 65
+    porcentaje_corrupcion = 32
+    porcentaje_perdida = 29
+    porcentaje_normal = 25
     tiempo_atraso = 4
     time_value = 1
     
     problema = random.choices(['No', 'Delay', 'Corrupto', 'Perdida' ],[porcentaje_normal,porcentaje_delay,porcentaje_corrupcion,porcentaje_perdida])[0]
+    
+    print('problema', problema)
     
     if problema=='Perdida':  # Situacion el paquete no se mando
         return 0
