@@ -1,6 +1,5 @@
 from scapy.all import *
-from utils.utils import print_error_stats
-import canalruidoso as f
+from utils.utils import print_stats, wrapper_send
 import time
 
 class Client:
@@ -25,34 +24,36 @@ class Client:
 
         # Wait for FIN or retransmit ACK
         self.wait_for_fin()
+        
+        print_stats()
 
     def send_syn(self):
         syn = TCP(sport=self.src_port, dport=self.dst_port, flags='S', seq=self.seq_num)
-        f.envio_paquetes_inseguro(IP(dst=self.dst_ip, src=self.src_ip)/syn)
-        print('SYN sent!')
+        wrapper_send(IP(dst=self.dst_ip, src=self.src_ip)/syn)
+        print('[SYN] sent')
 
     def wait_for_syn_ack(self):
         while True:
-            pkt = sniff(iface=self.interface, filter=f'tcp and src {self.dst_ip} and port {self.dst_port}', count=1, timeout=4)
+            pkt = sniff(iface=self.interface, filter=f'tcp and src {self.dst_ip} and port {self.dst_port}', count=1, timeout=6)
             
             if pkt and TCP in pkt[0] and pkt[0][TCP].flags == 'SA':  # Check for SYN+ACK
                 ip_response = pkt[0][IP]
                 tcp_response = pkt[0][TCP]
-                print(f'SYN+ACK received! from {ip_response.src}:{tcp_response.sport}')
+                print(f'[SYN+ACK] received from {ip_response.src}:{tcp_response.sport}')
                 self.ack_num = tcp_response.seq + 1
                 break
             else:
-                print('SYN+ACK not received, retransmitting SYN...')
+                print('[SYN+ACK] not received, retransmitting SYN...')
                 self.send_syn()
 
     def send_ack(self):
         ack = TCP(sport=self.src_port, dport=self.dst_port, flags='A', seq=self.seq_num + 1, ack=self.ack_num)
-        f.envio_paquetes_inseguro(IP(dst=self.dst_ip, src=self.src_ip)/ack)
-        print('ACK sent! Handshake complete.')
+        wrapper_send(IP(dst=self.dst_ip, src=self.src_ip)/ack)
+        print('[ACK] sent, Handshake complete.')
 
     def wait_for_fin(self):
         while True:
-            pkt = sniff(iface=self.interface, filter=f'tcp and src {self.dst_ip} and port {self.dst_port}', count=1, timeout=24)
+            pkt = sniff(iface=self.interface, filter=f'tcp and src {self.dst_ip} and port {self.dst_port}', count=1, timeout=26)
             
             if pkt and TCP in pkt[0] and pkt[0][TCP].flags == 'F':  # Check for FIN
                 ip_response = pkt[0][IP]
@@ -68,19 +69,19 @@ class Client:
 
     def send_fin_ack(self):
         fin_ack = TCP(sport=self.src_port, dport=self.dst_port, flags='FA', seq=self.seq_num + 2, ack=self.ack_num)
-        f.envio_paquetes_inseguro(IP(dst=self.dst_ip, src=self.src_ip)/fin_ack)
-        print('FIN+ACK sent! Waiting for ACK...')
+        wrapper_send(IP(dst=self.dst_ip, src=self.src_ip)/fin_ack)
+        print('[FIN+ACK] sent, Waiting for ACK...')
 
         self.wait_for_ack()
 
     def wait_for_ack(self):
         while True:
-            pkt = sniff(iface=self.interface, filter=f'tcp and src {self.dst_ip} and port {self.dst_port}', count=1, timeout=4)
+            pkt = sniff(iface=self.interface, filter=f'tcp and src {self.dst_ip} and port {self.dst_port}', count=1, timeout=6)
             if pkt and TCP in pkt[0] and pkt[0][TCP].flags == 'A':  # Check for ACK
-                print('ACK received! Connection closed.')
+                print(f'[ACK] received from {pkt[0][IP].src}:{pkt[0][TCP].sport} Connection closed.')
                 break
             else:
-                print('ACK not received, retransmitting FIN+ACK...')
+                print('[ACK] not received, retransmitting [FIN+ACK]...')
                 self.send_fin_ack()
 
     def start(self):
