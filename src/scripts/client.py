@@ -11,82 +11,77 @@ class Client:
         self.dst_port = dst_port
         self.seq_num = 100  # Initial sequence number for the client
         self.ack_num = 0    # Acknowledgment number
-
-    def handshake(self):
-        # Send SYN
-        self.send_syn()
-
-        # Wait for SYN+ACK
-        self.wait_for_syn_ack()
-
-        # Send ACK to complete the handshake
-        self.send_ack()
-
-        # Wait for FIN or retransmit ACK
-        self.wait_for_fin()
-        
-        print_stats()
+        self.state = 'INITIAL'
 
     def send_syn(self):
         syn = TCP(sport=self.src_port, dport=self.dst_port, flags='S', seq=self.seq_num)
         wrapper_send(IP(dst=self.dst_ip, src=self.src_ip)/syn)
         print('[SYN] sent')
-
-    def wait_for_syn_ack(self):
-        while True:
-            pkt = sniff(iface=self.interface, filter=f'tcp and src {self.dst_ip} and port {self.dst_port}', count=1, timeout=6)
-            
-            if pkt and TCP in pkt[0] and pkt[0][TCP].flags == 'SA':  # Check for SYN+ACK
-                ip_response = pkt[0][IP]
-                tcp_response = pkt[0][TCP]
-                print(f'[SYN+ACK] received from {ip_response.src}:{tcp_response.sport}')
-                self.ack_num = tcp_response.seq + 1
-                break
-            else:
-                print('[SYN+ACK] not received, retransmitting SYN...')
-                self.send_syn()
+        self.state = 'SYN_SENT'
 
     def send_ack(self):
         ack = TCP(sport=self.src_port, dport=self.dst_port, flags='A', seq=self.seq_num + 1, ack=self.ack_num)
         wrapper_send(IP(dst=self.dst_ip, src=self.src_ip)/ack)
-        print('[ACK] sent, Handshake complete.')
-
-    def wait_for_fin(self):
-        while True:
-            pkt = sniff(iface=self.interface, filter=f'tcp and src {self.dst_ip} and port {self.dst_port}', count=1, timeout=26)
-            
-            if pkt and TCP in pkt[0] and pkt[0][TCP].flags == 'F':  # Check for FIN
-                ip_response = pkt[0][IP]
-                tcp_response = pkt[0][TCP]
-                print(f'FIN received! from {ip_response.src}:{tcp_response.sport}')
-                self.ack_num = tcp_response.seq + 1
-                break
-            else:
-                print('FIN not received, retransmitting ACK...')
-                self.send_ack()
-
-        self.send_fin_ack()
-
+        print('[ACK] sent')
+        self.state = 'ACK_SENT'
+        
     def send_fin_ack(self):
-        fin_ack = TCP(sport=self.src_port, dport=self.dst_port, flags='FA', seq=self.seq_num + 2, ack=self.ack_num)
+        fin_ack = TCP(sport=self.src_port, dport=self.dst_port, flags='FA', seq=self.seq_num + 1, ack=self.ack_num)
         wrapper_send(IP(dst=self.dst_ip, src=self.src_ip)/fin_ack)
-        print('[FIN+ACK] sent, Waiting for ACK...')
+        print('[FIN+ACK] sent')
+        self.state = 'FIN_ACK_SENT'
+        
 
-        self.wait_for_ack()
-
-    def wait_for_ack(self):
+    def handle_state(self):
         while True:
-            pkt = sniff(iface=self.interface, filter=f'tcp and src {self.dst_ip} and port {self.dst_port}', count=1, timeout=6)
-            if pkt and TCP in pkt[0] and pkt[0][TCP].flags == 'A':  # Check for ACK
-                print(f'[ACK] received from {pkt[0][IP].src}:{pkt[0][TCP].sport} Connection closed.')
+            timeout = 6
+            print('\nClient state:', self.state)
+            
+            if self.state == 'CLOSED':
                 break
-            else:
-                print('[ACK] not received, retransmitting [FIN+ACK]...')
+
+            if self.state in ['INITIAL', 'SYN_SENT']:
+                self.send_syn()
+            elif self.state in ['SYN_ACK_RECEIVED', 'ACK_SENT']:
+                self.send_ack()
+                timeout=20
+            elif self.state in ['FIN_RECEIVED', 'FIN_ACK_SENT']:
                 self.send_fin_ack()
+            
+            self.sniff(timeout)
+    
+    def sniff(self, timeout=6):
+        pkt = sniff(iface=self.interface, filter=f'tcp and src {self.dst_ip} and port {self.dst_port}', count=1, timeout=timeout)
+        
+        FLAG   = pkt[0][TCP].flags if pkt and TCP in pkt[0] else None
+        IP_V   = pkt[0][IP]        if pkt and IP  in pkt[0] else None
+        TCP_V  = pkt[0][TCP]       if pkt and TCP in pkt[0] else None
+
+        # Case [SYN+ACK] server received my SYN, send ACK
+        if FLAG == 'SA':
+            print(f'[SYN+ACK] received from {IP_V.src}:{TCP_V.sport}')
+            self.state = 'SYN_ACK_RECEIVED'
+            self.ack_num = TCP_V.seq + 1
+            
+        # Case [FIN] server wants to close connection, send FIN+ACK
+        elif FLAG == 'F':
+            print(f'[FIN] received from {IP_V.src}:{TCP_V.sport}')
+            self.state = 'FIN_RECEIVED'
+            
+        # Case [ACK] server acked my FIN+ACK
+        elif FLAG == 'A':
+            print(f'[ACK] received from {IP_V.src}:{TCP_V.sport} Connection closed.')
+            self.state = 'CLOSED'
+        
+        else:
+            print(f'Missed expected packet, retransmit')
 
     def start(self):
         print('Starting client...')
-        self.handshake()
+
+        self.handle_state()
+        
+        print_stats()
 
 if __name__ == '__main__':
     client = Client()
