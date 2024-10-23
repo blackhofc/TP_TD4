@@ -53,7 +53,6 @@ class Server:
             self.sniff(timeout)
 
     def sniff(self, timeout=6):
-        print('Sniff with timeout of', timeout)
         pkt = sniff(iface=self.interface, filter=f'tcp port {self.listen_port}', count=1, timeout=timeout)
         
         FLAG = pkt[0][TCP].flags if pkt and TCP in pkt[0] else None
