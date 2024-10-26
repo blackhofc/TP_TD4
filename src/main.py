@@ -1,14 +1,6 @@
 import argparse
-from utils.utils import *
-from scripts.client import Client
-from scripts.server import Server
-
-'''
-TODO:
-- Realizar una apertura correctamente
-- Realizar un cierre correctamente
-- Calcular los porcentajes correspondientes
-'''
+from services.client import Client
+from services.server import Server
 
 def main():
     # Set up argument parsing

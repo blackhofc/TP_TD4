@@ -1,10 +1,11 @@
-from scapy.all import *
-from utils.utils import print_stats, wrapper_send
 import time
+from scapy.all     import *
+from utils.utils   import get_interface_by_ipv4
+from utils.wrapper import print_stats, send
 
 class Client:
-    def __init__(self, interface='Software Loopback Interface 1', src_ip='127.0.0.1', dst_ip='127.0.0.1', src_port=5000, dst_port=8000):
-        self.interface = interface
+    def __init__(self, src_ip='127.0.0.1', dst_ip='127.0.0.1', src_port=5000, dst_port=8000):
+        self.interface = get_interface_by_ipv4('127.0.0.1')
         self.src_ip = src_ip
         self.dst_ip = dst_ip
         self.src_port = src_port
@@ -15,19 +16,19 @@ class Client:
 
     def send_syn(self):
         syn = TCP(sport=self.src_port, dport=self.dst_port, flags='S', seq=self.seq_num)
-        wrapper_send(IP(dst=self.dst_ip, src=self.src_ip)/syn)
+        send(IP(dst=self.dst_ip, src=self.src_ip)/syn)
         print('[SYN] sent')
         self.state = 'SYN_SENT'
 
     def send_ack(self):
         ack = TCP(sport=self.src_port, dport=self.dst_port, flags='A', seq=self.seq_num + 1, ack=self.ack_num)
-        wrapper_send(IP(dst=self.dst_ip, src=self.src_ip)/ack)
+        send(IP(dst=self.dst_ip, src=self.src_ip)/ack)
         print('[ACK] sent')
         self.state = 'ACK_SENT'
         
     def send_fin_ack(self):
         fin_ack = TCP(sport=self.src_port, dport=self.dst_port, flags='FA', seq=self.seq_num + 1, ack=self.ack_num)
-        wrapper_send(IP(dst=self.dst_ip, src=self.src_ip)/fin_ack)
+        send(IP(dst=self.dst_ip, src=self.src_ip)/fin_ack)
         print('[FIN+ACK] sent')
         self.state = 'FIN_ACK_SENT'
         
@@ -77,7 +78,7 @@ class Client:
             print(f'Missed expected packet, retransmit')
 
     def start(self):
-        print('Starting client...')
+        print(f'Starting client, listening interface "{self.interface}"')
 
         self.handle_state()
         

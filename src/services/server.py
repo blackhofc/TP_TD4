@@ -1,9 +1,10 @@
-from scapy.all import *
-from utils.utils import print_stats, wrapper_send
+from scapy.all     import *
+from utils.utils   import get_interface_by_ipv4
+from utils.wrapper import print_stats, send
 
 class Server:
-    def __init__(self, interface='Software Loopback Interface 1', src_ip='127.0.0.1', dst_ip='127.0.0.1', listen_port=8000, dst_port=5000):
-        self.interface = interface
+    def __init__(self, src_ip='127.0.0.1', dst_ip='127.0.0.1', listen_port=8000, dst_port=5000):
+        self.interface = get_interface_by_ipv4('127.0.0.1')
         self.src_ip = src_ip
         self.dst_ip = dst_ip
         self.listen_port = listen_port
@@ -14,19 +15,19 @@ class Server:
 
     def send_syn_ack(self):
         syn_ack = TCP(sport=self.listen_port, dport=self.dst_port, flags='SA', seq=self.seq_num, ack=self.ack_num)
-        wrapper_send(IP(dst=self.dst_ip, src=self.src_ip)/syn_ack)
+        send(IP(dst=self.dst_ip, src=self.src_ip)/syn_ack)
         print(f'[SYN+ACK] sent')
         self.state = 'SYN_ACK_SENT'
         
     def send_fin(self):
         syn_ack = TCP(sport=self.listen_port, dport=self.dst_port, flags='F', seq=self.seq_num, ack=self.ack_num)
-        wrapper_send(IP(dst=self.dst_ip, src=self.src_ip)/syn_ack)
+        send(IP(dst=self.dst_ip, src=self.src_ip)/syn_ack)
         print(f'[FIN] sent')
         self.state = 'CLOSE_WAIT'
         
     def send_ack(self):
         syn_ack = TCP(sport=self.listen_port, dport=self.dst_port, flags='A', seq=self.seq_num, ack=self.ack_num)
-        wrapper_send(IP(dst=self.dst_ip, src=self.src_ip)/syn_ack)
+        send(IP(dst=self.dst_ip, src=self.src_ip)/syn_ack)
         print(f'[ACK] sent')
         self.state = 'TIME_WAIT'
 
@@ -44,11 +45,13 @@ class Server:
             elif self.state in ['SYN_RECEIVED', 'SYN_ACK_SENT']:
                 self.send_syn_ack()
             elif self.state in ['ACK_RECEIVED', 'CLOSE_WAIT']:
-                # time.sleep(20) 
+                print('Waiting 20 seconds before closing connection')
+                time.sleep(20) 
                 self.send_fin()
             elif self.state == 'FIN_ACK_RECEIVED':
                 self.send_ack()
                 timeout = 120
+                print('TIME_WAIT for 120 secs before finish closing')
             
             self.sniff(timeout)
 
@@ -78,7 +81,7 @@ class Server:
             print(f'Missed expected packet, retransmit')
 
     def start(self):
-        print(f'Starting server, listening port {self.listen_port}...')
+        print(f'Starting server, listening interface "{self.interface}" port "{self.listen_port}"')
         self.handle_state()
         
         print_stats()
