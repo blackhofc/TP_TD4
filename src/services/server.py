@@ -37,7 +37,6 @@ class Server:
         print(f'[ACK] sent')
         self.state = 'TIME_WAIT'
 
-
     def handle_state(self):
         while True:
             timeout = 3
@@ -65,9 +64,9 @@ class Server:
     def sniff(self, timeout=3):
         pkt = sniff(iface=self.interface, filter=f'tcp port {self.listen_port}', count=1, timeout=timeout)
         
-        FLAG   = pkt[0][TCP].flags if pkt and TCP in pkt[0] else None
-        IP_V   = pkt[0][IP]        if pkt and IP  in pkt[0] else None
-        TCP_V  = pkt[0][TCP]       if pkt and TCP in pkt[0] else None
+        FLAG  = pkt[0][TCP].flags if pkt and TCP in pkt[0] else None
+        IP_V  = pkt[0][IP]        if pkt and IP  in pkt[0] else None
+        TCP_V = pkt[0][TCP]       if pkt and TCP in pkt[0] else None
         
         # Case [SYN] client sent connect
         if FLAG == 'S':
@@ -95,7 +94,6 @@ class Server:
         
         print_stats()
         
-
 if __name__ == '__main__':
     server = Server()
     server.start()

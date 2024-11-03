@@ -63,4 +63,3 @@ def send(pkt):
     if pkt[TCP].chksum == 0x1234:
         stats['corrupted_packets'] += 1
         return
-    

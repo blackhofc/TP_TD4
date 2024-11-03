@@ -37,7 +37,6 @@ class Client:
 
         print('[FIN+ACK] sent')
         self.state = 'FIN_ACK_SENT'
-        
 
     def handle_state(self):
         while True:
