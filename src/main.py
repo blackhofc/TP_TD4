@@ -17,7 +17,6 @@ def main():
     # Parse the arguments
     args = parser.parse_args()
 
-    # Run the selected mode
     if args.mode == 'client':
         Client().start()
         return

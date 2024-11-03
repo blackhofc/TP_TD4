@@ -16,20 +16,21 @@ def print_stats():
         return
     
     print('\n----------Resultados----------')
+
     # Cálculo de los porcentajes
-    porcentaje_perdida = (stats['lost_packets'] / stats['total_packets']) * 100
-    porcentaje_corrupcion = (stats['corrupted_packets'] / stats['total_packets']) * 100
-    porcentaje_retraso = (stats['delayed_packets'] / stats['total_packets']) * 100
-    porcentaje_normal = 100 - (porcentaje_perdida + porcentaje_corrupcion + porcentaje_retraso)
+    loss_percent = (stats['lost_packets'] / stats['total_packets']) * 100
+    corrupted_percent = (stats['corrupted_packets'] / stats['total_packets']) * 100
+    delayed_percent = (stats['delayed_packets'] / stats['total_packets']) * 100
+    normal_percent = 100 - (loss_percent + corrupted_percent + delayed_percent)
     
     # Cálculo del delay promedio (solo si hubo retrasos)
     delay_promedio = stats['total_delay_time'] / stats['delayed_packets'] if stats['delayed_packets'] > 0 else 0
     
     print(f'Total de paquetes enviados: {stats['total_packets']}')
-    print(f'Paquetes perdidos: {porcentaje_perdida:.2f}%')
-    print(f'Paquetes corruptos: {porcentaje_corrupcion:.2f}%')
-    print(f'Paquetes retrasados: {porcentaje_retraso:.2f}%')
-    print(f'Paquetes normales: {porcentaje_normal:.2f}%')
+    print(f'Paquetes perdidos: {loss_percent:.2f}%')
+    print(f'Paquetes corruptos: {corrupted_percent:.2f}%')
+    print(f'Paquetes retrasados: {delayed_percent:.2f}%')
+    print(f'Paquetes normales: {normal_percent:.2f}%')
     print(f'Delay promedio (si hay retrasos): {delay_promedio:.4f} segundos')
 
     
@@ -47,13 +48,13 @@ def send(pkt):
     end_time = time.time()
     elapsed = end_time - initial_time 
 
-    # Si el paquete se perdió, actualizamos el contador de pérdidas
+    # Si el paquete se perdió
     if result == 0:
         stats['lost_packets'] += 1
         return
     
-    # Si hubo retraso (se asume un tiempo normal de envío de 1 segundo)
-    if elapsed > 4:
+    # Qué un paquete llegue con delay lo definimos como que tarde más de 3 segundos en llegar
+    if elapsed > 3:
         stats['delayed_packets'] += 1
         stats['total_delay_time'] += (elapsed - 1)
         return
